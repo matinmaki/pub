@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Add USBKill as systemd service v0.1
+# Add USBKill as systemd service v0.2
 # Tested with CentOS 7, Fedora 29-30
 #
 #  You need the original USBKill from hephaestos (https://github.com/hephaest0s/usbkill) and copy this script to the root of usbkill dir, such as:
@@ -13,6 +13,8 @@ if [ "$EUID" -ne 0 ] ; then
 	printf "Must be run as root\n"
 	exit
 else
+
+DATE=`date +%F_%S`
 
 case "$1" in
 	add) 
@@ -40,18 +42,18 @@ case "$1" in
 		if [ ! -f /usr/lib/systemd/system/usbkill.service ] ; then
 			printf "Systemd file /usr/lib/systemd/system/usbkill.service already removed, skipping.\n"
 		else
-			cp /usr/lib/systemd/system/usbkill.service /tmp/usbkill.service_BAK_`date +%s` ;
+			cp /usr/lib/systemd/system/usbkill.service /tmp/usbkill.service_$DATE.bak ;
 			rm -f /usr/lib/systemd/system/usbkill.service ;
 			systemctl daemon-reload ;
-			printf "OK: Systemd file /usr/lib/systemd/system/usbkill.service removed and backup copied to /tmp.\n"
+			printf "OK: Systemd file /usr/lib/systemd/system/usbkill.service removed and backup copied to /tmp/usbkill.service_$DATE.bak.\n"
 		fi
 
 		if [ ! -f /etc/usbkill.ini ] ; then
 			printf "Configuration file /etc/usbkill.ini already removed, skipping.\n"
 		else
-			cp /etc/usbkill.ini /tmp/usbkill.ini_BAK_`date +%s` ;
+			cp /etc/usbkill.ini /tmp/usbkill.ini_$DATE.bak ;
 			rm -f /etc/usbkill.ini ;
-			printf "OK: Configuration file /etc/usbkill.ini removed and backup copied to /tmp.\n"
+			printf "OK: Configuration file /etc/usbkill.ini removed and backup copied to /tmp/usbkill.ini_$DATE.bak.\n"
 		fi
 	;;
 
