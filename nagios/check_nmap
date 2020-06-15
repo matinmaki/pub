@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# NMAP host check to replace ICMP Ping for Nagios Remote Plugin Executor (NRPE) v0.1
+# Tested with Fedora 31
+#
+#  Nagios exit codes:
+#  0 = OK
+#  1 = WARNING
+#  2 = CRITICAL
+#  3 = UNKNOWN
+#
+
+NMAP_BIN="/usr/bin/nmap"
+
+if [ ! -f $NMAP_BIN ] ; then
+        echo "ERROR: $NMAP_BIN not found."
+        exit 3
+fi
+
+NMAP_OUTPUT=`$NMAP_BIN -sn $1 | sed -n 3p`
+if [[ $NMAP_OUTPUT =~ ^Host\ is\ up.* ]] ; then
+        echo "NMAP OK: $NMAP_OUTPUT" ;
+        exit 0
+else
+        echo "CRITICAL: Host is down." ;
+        exit 2
+fi
