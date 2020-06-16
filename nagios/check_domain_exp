@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Domain expiry date check for Nagios Remote Plugin Executor (NRPE) v0.1
+# Tested with Fedora 31
+#
+#  Nagios exit codes:
+#  0 = OK
+#  1 = WARNING
+#  2 = CRITICAL
+#  3 = UNKNOWN
+#
+
+if [ ! -f /usr/bin/whois ] ; then
+        echo "/usr/bin/whois not found."
+        exit 3
+fi
+
+if [ $# -eq 0 ] ; then
+        echo "Please specify --domain parameter: " ;
+        echo " $0 --domain=foo.bar " ;
+        echo "Or with warning and critical threshold, in days: " ;
+        echo " $0 --domain=foo.bar --warning=100 --critical=30 " ;
+        exit 3
+fi
+
+# Optional random sleep period in case a lot of domains to be checked
+#sleep $((RANDOM % 10))
+
+while [[ $# -gt 0 ]] && [[ "$1" == * ]] ;
+do
+        opt="$1";
+        case "$opt" in
+                "--domain="* )
+                DOMAIN="${opt#*=}" ; shift ;;
+                "--warning="* )
+                WARNING="${opt#*=}" ; shift ;;
+                "--critical="* )
+                CRITICAL="${opt#*=}" ; shift ;;
+                *) echo >&2 "ERROR: Invalid option: $@. Example: $0 --domain=foo.bar --warning=100 --critical=30" ; exit 3 ;;
+        esac
+done
+
+DATE_EXP=$(whois $DOMAIN | grep "Expiration Date\|Registry Expiry" | grep '[0-9]\+' | awk '{print $NF}')
+DATE_NOW=$(date +%s)
+DAYS=$(( -(($DATE_NOW) - $(date +%s --date "$DATE_EXP") )/(3600*24)))
+
+if [[ $DAYS -le $CRITICAL ]];
+        then echo "CRITICAL: Domain '$DOMAIN' expires in $DAYS days" ;
+        exit 2
+fi
+
+if [[ $DAYS -le $WARNING ]];
+        then echo "WARNING: Domain '$DOMAIN' expires in $DAYS days" ;
+        exit 1
+fi
+
+echo "OK: Domain '$DOMAIN' expires in $DAYS days" ;
+exit 0
