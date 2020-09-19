@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Domain expiration check for Checkmk monitoring system, v0.1
+# Domain expiration check for Checkmk monitoring system, v0.2
 # Tested with CentOS 8 and Checkmk 1.6.0p16
 # Place the script under /usr/lib/check_mk_agent/local/
 #
@@ -10,17 +10,24 @@
 # returns the expiration date, so errors can occur so adjust
 # DATE_EXP accordingly.
 
-# List domains to be checked, separated by commma: domain1.com,domain2.net etc.
+# List of domains to be checked, separated by commma: domain1.com,domain2.net etc.
 DOMAINS="example.com"
 WARNING="29"
 CRITICAL="25"
 
+WHOIS_BIN=/usr/bin/whois
+
 echo "<<<local>>>"
+if [ ! -f ${WHOIS_BIN} ] ; then
+        echo "3 Domain - UNKNOWN - ${WHOIS_BIN} not found."
+        exit
+fi
+
 for domain in $(echo $DOMAINS | sed "s/,/ /g")
 do
-	DATE_EXP=$(whois $domain | grep "Expiration Date\|Registry Expiry" | grep '[0-9]\+' | awk '{print $NF}' | uniq)
+	DATE_EXP=$(${WHOIS_BIN} $domain | grep "Expiration Date\|Registry Expiry" | grep '[0-9]\+' | awk '{print $NF}' | uniq)
 	DATE_NOW=$(date +%s)
-	DAYS=$(( -(($DATE_NOW) - $(date +%s --date "$DATE_EXP") )/(3600*24)))
+	DAYS=$(( -(($DATE_NOW) - $(date +%s --date "$DATE_EXP"))/(3600*24)))
 
 	if [[ $DAYS -le $CRITICAL ]];
         	then echo "2 Domain_${domain} - CRIT - Domain '$domain' expires in $DAYS days" ;
